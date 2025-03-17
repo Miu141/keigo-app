@@ -32,20 +32,40 @@ app.post('/api/convert', async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "あなたは日本語の敬語変換の専門家です。入力された文章を丁寧な敬語に変換してください。変換後の文章のみを返してください。"
+          content: "あなたは日本語の敬語変換の専門家です。入力された文章を尊敬語、謙譲語、丁寧語の3種類に分けて変換してください。それぞれの変換結果を明確に区別して返してください。"
         },
         {
           role: "user",
-          content: text
+          content: `以下の文章を尊敬語、謙譲語、丁寧語の3種類に分けて変換してください。
+文章: ${text}
+
+回答は以下の形式で返してください：
+尊敬語: [尊敬語に変換した文章]
+謙譲語: [謙譲語に変換した文章]
+丁寧語: [丁寧語に変換した文章]`
         }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 1000,
     });
 
     const result = completion.choices[0].message.content;
     
-    res.json({ result });
+    // 結果をパースして3種類の敬語に分ける
+    const sonkeigoMatch = result.match(/尊敬語[:：]\s*([\s\S]*?)(?=謙譲語[:：]|$)/);
+    const kenjougoMatch = result.match(/謙譲語[:：]\s*([\s\S]*?)(?=丁寧語[:：]|$)/);
+    const teinegoMatch = result.match(/丁寧語[:：]\s*([\s\S]*?)(?=$)/);
+    
+    const sonkeigo = sonkeigoMatch ? sonkeigoMatch[1].trim() : '';
+    const kenjourgo = kenjougoMatch ? kenjougoMatch[1].trim() : '';
+    const teinego = teinegoMatch ? teinegoMatch[1].trim() : '';
+    
+    res.json({ 
+      sonkeigo,
+      kenjourgo,
+      teinego,
+      fullResult: result
+    });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: '変換中にエラーが発生しました' });

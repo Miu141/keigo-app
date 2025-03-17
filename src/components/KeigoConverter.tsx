@@ -4,7 +4,10 @@ import { FaPaperPlane, FaSpinner, FaExchangeAlt, FaCopy, FaCheck } from 'react-i
 
 const KeigoConverter = () => {
   const [inputText, setInputText] = useState('');
-  const [outputText, setOutputText] = useState('');
+  const [sonkeigo, setSonkeigo] = useState('');
+  const [kenjourgo, setKenjourgo] = useState('');
+  const [teinego, setTeinego] = useState('');
+  const [activeTab, setActiveTab] = useState('sonkeigo');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -21,7 +24,9 @@ const KeigoConverter = () => {
     try {
       // OpenAI APIを使用して敬語に変換
       const response = await axios.post('/api/convert', { text: inputText });
-      setOutputText(response.data.result);
+      setSonkeigo(response.data.sonkeigo);
+      setKenjourgo(response.data.kenjourgo);
+      setTeinego(response.data.teinego);
     } catch (err) {
       console.error('Error converting text:', err);
       setError('変換中にエラーが発生しました。もう一度お試しください。');
@@ -30,13 +35,29 @@ const KeigoConverter = () => {
     }
   };
 
+  const getActiveText = () => {
+    switch (activeTab) {
+      case 'sonkeigo':
+        return sonkeigo;
+      case 'kenjourgo':
+        return kenjourgo;
+      case 'teinego':
+        return teinego;
+      default:
+        return '';
+    }
+  };
+
   const copyToClipboard = () => {
-    if (outputText) {
-      navigator.clipboard.writeText(outputText);
+    const textToCopy = getActiveText();
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const hasResults = sonkeigo || kenjourgo || teinego;
 
   return (
     <div className="bg-white rounded-xl shadow-soft p-6 transition-all duration-300 hover:shadow-lg w-full">
@@ -59,12 +80,41 @@ const KeigoConverter = () => {
           </div>
         </div>
 
-        {outputText ? (
+        {hasResults ? (
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label htmlFor="outputText" className="block text-sm font-medium text-gray-700">
-                敬語変換結果
-              </label>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveTab('sonkeigo')}
+                  className={`px-3 py-1 text-sm rounded-t-lg transition-colors ${
+                    activeTab === 'sonkeigo'
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  尊敬語
+                </button>
+                <button
+                  onClick={() => setActiveTab('kenjourgo')}
+                  className={`px-3 py-1 text-sm rounded-t-lg transition-colors ${
+                    activeTab === 'kenjourgo'
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  謙譲語
+                </button>
+                <button
+                  onClick={() => setActiveTab('teinego')}
+                  className={`px-3 py-1 text-sm rounded-t-lg transition-colors ${
+                    activeTab === 'teinego'
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  丁寧語
+                </button>
+              </div>
               <button
                 onClick={copyToClipboard}
                 className="flex items-center text-sm text-primary-600 hover:text-primary-700 transition-colors"
@@ -83,10 +133,9 @@ const KeigoConverter = () => {
               </button>
             </div>
             <div
-              id="outputText"
-              className="w-full p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 min-h-[200px] transition-colors duration-200"
+              className="w-full p-4 border border-gray-300 rounded-b-lg rounded-r-lg bg-gray-50 text-gray-900 min-h-[200px] transition-colors duration-200"
             >
-              {outputText}
+              {getActiveText()}
             </div>
           </div>
         ) : (
@@ -102,7 +151,7 @@ const KeigoConverter = () => {
         <button
           onClick={convertToKeigo}
           disabled={isLoading || !inputText.trim()}
-          className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-70"
+          className="mt-8 flex items-center justify-center px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 disabled:opacity-70"
         >
           {isLoading ? (
             <>
